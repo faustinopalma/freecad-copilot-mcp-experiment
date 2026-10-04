@@ -14,6 +14,35 @@ MCP gives Copilot tools it can call to inspect a FreeCAD document, create geomet
 | [blwfish/freecad-mcp](https://github.com/blwfish/freecad-mcp) | 8.2.2 | Passed the preliminary technical tests; Copilot rejected a tool schema when starting the chat trial |
 | [spkane/freecad-addon-robust-mcp-server](https://github.com/spkane/freecad-addon-robust-mcp-server) | 0.6.2 | Completed construction and revision; the dimensional change propagated through the existing model |
 
+## Architecture
+
+This is the GUI connection used with Robust. Copilot's model chooses the operations; FreeCAD builds the geometry on the local computer.
+
+```mermaid
+flowchart TD
+    user["You"] -->|Describe or revise a part| client
+    model["Language model<br/>Copilot service"] <-->|Context, tool choices and results| client
+    subgraph local["Local computer"]
+        client["VS Code<br/>Copilot agent and MCP client"]
+        server["Robust MCP server<br/>Dedicated Python environment"]
+        launcher["FreeCAD profile launcher"]
+        subgraph freecad["FreeCAD process"]
+            bridge["Robust MCP Bridge addon"]
+            queue["Main-thread execution queue"]
+            document["Sketcher, PartDesign and document"]
+        end
+        files["FCStd, STEP, STL and images"]
+        client <-->|MCP over stdio| server
+        server <-->|XML-RPC on loopback port 9875| bridge
+        bridge <--> queue
+        queue <--> document
+        document -->|Save and export| files
+        launcher -.->|Launches FreeCAD and starts the bridge| bridge
+    end
+```
+
+The launcher prepares the selected FreeCAD profile. VS Code starts the external MCP process from the workspace configuration. Tool calls and their results travel through those two processes; generated CAD files stay local, while Copilot receives the tool results needed for its next decision. [Architecture and operating flows](ARCHITECTURE.md) explains installation, startup, the modeling loop and removal.
+
 ## Installation Through Chat
 
 The setup began with a request to Copilot: find the installed FreeCAD version, research the available MCP servers, install the selected candidates in separate environments, and make them easy to remove after the comparison.
@@ -23,6 +52,18 @@ Copilot handled the package installation, configuration and checks. It also prep
 Back to the Future Part II comes to mind:
 
 > "You mean you have to use your hands? That's like a baby's toy!"
+
+To try the same approach, use the [installation prompt and VS Code settings](SETUP.md#install-through-copilot). The guide also provides a [removal prompt](SETUP.md#uninstall-through-copilot) that preserves your models and FreeCAD installation. Autopilot is optional: Agent mode with normal approvals can perform the setup, while Autopilot can continue the steps automatically with broader permissions.
+
+### Starting FreeCAD After Installation
+
+The connection has two parts: an addon running inside FreeCAD and an external MCP server managed by VS Code. Our startup script selected the FreeCAD workbench and started its bridge automatically. With a normal manual launch, that bridge needs to be started too:
+
+1. Open FreeCAD using the profile where the addon was installed. For an isolated setup, use the launcher prepared by Copilot.
+2. For **Robust**, select the **Robust MCP Bridge** workbench and click **Start Bridge**. For **neka**, select **MCP Addon** and click **Start RPC Server**. Check FreeCAD's Report view for the running status.
+3. In VS Code, run **MCP: List Servers**, select the configured server and choose **Start** if needed. Enable its tools in the chat's tool picker, then ask Copilot to check the connection and list the open documents.
+
+Keep FreeCAD open while drawing. The bridge can start automatically on later launches: Robust exposes **Auto-start bridge** in its workbench preferences, and neka exposes **Auto-Start Server** in the **FreeCAD MCP** menu. These settings apply to the chosen FreeCAD profile. [Daily startup and troubleshooting](SETUP.md#daily-startup) covers the remaining checks.
 
 ## The Design Task
 
@@ -61,7 +102,7 @@ These figures describe one paired run with both model reasoning and CAD executio
 
 ## What Made a Difference
 
-The dimensional revision revealed the clearest difference. In the neka model, three rounded profiles switched to an unintended arc solution when the dimensions changed. Copilot repaired their constraints and completed the revision. The model created through Robust kept its existing objects and expression links while the two dimensions changed. For iterative design, that behavior makes Robust the provisional choice from this experiment.
+The dimensional revision revealed the clearest difference. In the neka model, three rounded profiles switched to an unintended arc solution when the dimensions changed. Copilot repaired their constraints and completed the revision. The model created through Robust kept its existing objects and expression links while the two dimensions changed. We chose Robust for continued iterative design based on this result.
 
 Neka delivered native MCP images directly to the chat. Robust's screenshot and some modeling/export tools required Python fallbacks through the same MCP. One native STL export even reported success while producing an open mesh; the validation caught it, and Copilot regenerated a closed mesh. Checking the resulting geometry and exported files was essential to reaching a usable result.
 
