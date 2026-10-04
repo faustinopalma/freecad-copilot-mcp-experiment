@@ -16,32 +16,49 @@ MCP gives Copilot tools it can call to inspect a FreeCAD document, create geomet
 
 ## Architecture
 
-This is the GUI connection used with Robust. Copilot's model chooses the operations; FreeCAD builds the geometry on the local computer.
+This is the GUI connection used with Robust, including the local-file screenshot fallback observed in the trial. The numbered steps below explain each part of the path.
 
 ```mermaid
 flowchart TD
     user["You"] -->|Describe or revise a part| client
-    model["Language model<br/>Copilot service"] <-->|Context, tool choices and results| client
+    model["1. Language model<br/>Copilot service"] <-->|Context, tool choices and results| client
     subgraph local["Local computer"]
-        client["VS Code<br/>Copilot agent and MCP client"]
-        server["Robust MCP server<br/>Dedicated Python environment"]
+        client["2. VS Code<br/>Copilot agent, permissions and MCP client"]
+        server["3. Robust MCP server<br/>Dedicated Python environment"]
         launcher["FreeCAD profile launcher"]
         subgraph freecad["FreeCAD process"]
-            bridge["Robust MCP Bridge addon"]
+            bridge["4. Robust MCP Bridge addon"]
             queue["Main-thread execution queue"]
-            document["Sketcher, PartDesign and document"]
+            document["5. FreeCAD document<br/>Geometry and viewport"]
         end
-        files["FCStd, STEP, STL and images"]
-        client <-->|MCP over stdio| server
-        server <-->|XML-RPC on loopback port 9875| bridge
+        files["Local FCStd, STEP, STL and PNG files"]
+        reader["6. Image-reading tool<br/>Outside the FreeCAD MCP"]
+        client <-->|Tool calls and results: MCP stdio| server
+        server <-->|Commands and results: XML-RPC 9875| bridge
         bridge <--> queue
         queue <--> document
         document -->|Save and export| files
+        client -.->|Request saved PNG| reader
+        files -->|PNG bytes| reader
+        reader -->|Image content for chat and model| client
         launcher -.->|Launches FreeCAD and starts the bridge| bridge
     end
+    client -->|Show the response| user
 ```
 
-The launcher prepares the selected FreeCAD profile. VS Code starts the external MCP process from the workspace configuration. Tool calls and their results travel through those two processes; generated CAD files stay local, while Copilot receives the tool results needed for its next decision. [Architecture and operating flows](ARCHITECTURE.md) explains installation, startup, the modeling loop and removal.
+**Before drawing: the launcher.** It opens FreeCAD with the selected profile and starts the bridge addon. VS Code separately starts the external MCP server from the workspace configuration. Both processes must be available for a CAD tool call to succeed.
+
+**1. The request and the model.** You describe a part or ask for a change in Copilot chat. The language model uses that request and previous results to choose a tool and its arguments, such as a dimension to change or a view to capture.
+
+**2. VS Code and permissions.** VS Code decides whether that tool call may run under the current approval settings. With manual permissions it may show the tool and arguments for confirmation; with an applicable prior approval or an autonomous mode, it can proceed automatically. Approval authorizes execution: it does not check the part's dimensions or guarantee safe Python code.
+
+**3. The MCP server.** VS Code sends an approved call to the external server over standard input/output. The server translates the selected tool operation into a request for FreeCAD and sends it to the local bridge using XML-RPC.
+
+**4. The bridge and execution queue.** The addon receives the request inside FreeCAD and queues work on its main thread. This is the connection to FreeCAD's live document and GUI; it also carries operation results and errors back to the external server.
+
+**5. FreeCAD and the files.** FreeCAD creates or modifies features, solves constraints, recomputes the geometry and renders the viewport. Save and export operations write local files. A screenshot is produced from that viewport when a capture operation requests it.
+
+**6. Results and images.** Measurements, errors and file paths return through the bridge and MCP server. In the Robust trial, the screenshot command used this path to save a PNG, then a separate `view_image` tool read the file and supplied its pixels to the chat and model. The diagram shows that file-reading route. With neka's working native image tool, the image data instead returned through the bridge and MCP server as an MCP image response. [Architecture and operating flows](ARCHITECTURE.md) details both paths.
 
 ## Installation Through Chat
 
