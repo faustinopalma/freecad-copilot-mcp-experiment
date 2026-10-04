@@ -1,0 +1,111 @@
+{
+  "experiment": "FreeCAD MCP servers with GitHub Copilot",
+  "date": "2026-10-04",
+  "case": "enclosure-v1",
+  "runsPerCompletedCandidate": 1,
+  "environment": {
+    "freecad": "1.1.3",
+    "applicationArchitecture": "x64",
+    "operatingSystem": "Windows",
+    "operatingSystemArchitecture": "ARM64",
+    "modelControl": "same Copilot model with high reasoning across both completed sessions"
+  },
+  "method": {
+    "phases": [
+      "initial",
+      "revision"
+    ],
+    "initialEnvelopeMm": [
+      120,
+      80,
+      40
+    ],
+    "revisedEnvelopeMm": [
+      140,
+      80,
+      50
+    ],
+    "wallAndFloorMm": 3,
+    "locatingClearanceMm": 0.4,
+    "timing": "User message to last model/tool event for each phase, with the inter-phase human pause excluded",
+    "tokenSource": "Recorded per-request chat usage summed within each phase",
+    "cachedInputIsSubsetOfTotalInput": true,
+    "contextCondition": "The editor automatically attached README content in both sessions"
+  },
+  "candidates": [
+    {
+      "id": "neka",
+      "repository": "https://github.com/neka-nat/freecad-mcp",
+      "version": "0.1.25",
+      "revision": "d6bbe4b38be3a622b5981d9d2afa7037ee080534",
+      "outcome": "Completed both phases with final geometry and exports passing recorded checks",
+      "parameterOnlyRevision": false,
+      "nativeMcpImageDelivery": true,
+      "phases": [
+        {
+          "phase": "initial",
+          "wallSeconds": 1052.211,
+          "modelRequests": 41,
+          "mcpCalls": 30,
+          "pythonMcpCalls": 19,
+          "inputTokens": 2836669,
+          "cachedInputTokens": 2746809,
+          "uncachedInputTokens": 89860,
+          "outputTokens": 23640
+        },
+        {
+          "phase": "revision",
+          "wallSeconds": 432.534,
+          "modelRequests": 32,
+          "mcpCalls": 26,
+          "pythonMcpCalls": 21,
+          "inputTokens": 3144358,
+          "cachedInputTokens": 3031242,
+          "uncachedInputTokens": 113116,
+          "outputTokens": 18543
+        }
+      ]
+    },
+    {
+      "id": "robust",
+      "repository": "https://github.com/spkane/freecad-addon-robust-mcp-server",
+      "version": "0.6.2",
+      "revision": "eb2f6fba2a5422ad390213fae380a1acac040cdf",
+      "outcome": "Completed both phases with final geometry and exports passing recorded checks",
+      "parameterOnlyRevision": true,
+      "nativeMcpImageDelivery": false,
+      "phases": [
+        {
+          "phase": "initial",
+          "wallSeconds": 822.256,
+          "modelRequests": 58,
+          "mcpCalls": 44,
+          "pythonMcpCalls": 23,
+          "inputTokens": 4399904,
+          "cachedInputTokens": 4293980,
+          "uncachedInputTokens": 105924,
+          "outputTokens": 34908
+        },
+        {
+          "phase": "revision",
+          "wallSeconds": 291.373,
+          "modelRequests": 20,
+          "mcpCalls": 14,
+          "pythonMcpCalls": 8,
+          "inputTokens": 2266422,
+          "cachedInputTokens": 2141288,
+          "uncachedInputTokens": 125134,
+          "outputTokens": 13355
+        }
+      ]
+    },
+    {
+      "id": "blwfish",
+      "repository": "https://github.com/blwfish/freecad-mcp",
+      "version": "8.2.2",
+      "revision": "dbca328316c6bfd03dba205c9e5f695a7ea5b2f9",
+      "outcome": "Copilot tool-schema validation blocked the chat trial",
+      "observedProblem": "spreadsheet_operations.values was an array without an items schema"
+    }
+  ]
+}
