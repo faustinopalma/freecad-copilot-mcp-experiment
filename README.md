@@ -62,13 +62,13 @@ flowchart TD
 
 ## Installation Through Chat
 
-The setup began with a request to Copilot: find the installed FreeCAD version, research the available MCP servers, install the selected candidates in separate environments, and make them easy to remove after the comparison.
-
-Copilot handled the package installation, configuration and checks. It also prepared a selector that starts the appropriate FreeCAD profile. The user's part was to review the setup and enable the selected server in VS Code. Asking for this in chat turned the installation procedure into part of the same workflow used to draw the model.
-
-Back to the Future Part II comes to mind:
+We could have researched, installed and configured all three servers by hand. But the point was to try drawing through chat, not to spend the afternoon repeating setup steps. It brought to mind the kids watching Marty play an arcade game in *Back to the Future Part II*:
 
 > "You mean you have to use your hands? That's like a baby's toy!"
+
+Fair point. We used our hands to type a request to Copilot instead: find the installed FreeCAD version, research the available MCP servers, install the selected candidates in separate environments, and make them easy to remove after the comparison.
+
+Copilot handled the package installation, configuration and checks. It also prepared a selector that starts the appropriate FreeCAD profile. The user's part was to review the setup and enable the selected server in VS Code. Asking for this in chat turned the installation procedure into part of the same workflow used to draw the model.
 
 To try the same approach, use the [installation prompt and VS Code settings](SETUP.md#install-through-copilot). The guide also provides a [removal prompt](SETUP.md#uninstall-through-copilot) that preserves your models and FreeCAD installation. Autopilot is optional: Agent mode with normal approvals can perform the setup, while Autopilot can continue the steps automatically with broader permissions.
 
